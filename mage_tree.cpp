@@ -181,3 +181,150 @@ void MageTree::find_oldest(Mage* node, Mage*& best) const {
     find_oldest(node->first_child,best);
     find_oldest(node->next_sibling,best);
 }
+
+Mage* MageTree::choose_new_owner(Mage* dead) {
+    // Regla >70 anios
+    if(dead->age>70 && dead->first_child){
+        string t=dead->type_magic;
+        Mage* m=find_in_subtree(dead->first_child,&t,1);
+        if(m) return m;
+        Mage* old=nullptr;
+        find_oldest(dead->first_child,old);
+        return old;
+    }
+    // Con hijos
+    if(dead->first_child){
+        string p1[2]={"elemental","unique"};
+        Mage* m=find_in_subtree(dead->first_child,p1,2);
+        if(m) return m;
+        string p2[1]={"mixed"};
+        m=find_in_subtree(dead->first_child,p2,1);
+        if(m) return m;
+        return find_first_male(dead->first_child);
+    }
+    Mage* parent=find_by_id(dead->father_id);
+    if(parent){
+        Mage* s=parent->first_child;
+        while(s){
+            if(s->id!=dead->id && !s->is_dead && s->type_magic==dead->type_magic)
+                return s;
+            s=s->next_sibling;
+        }
+        s=parent->first_child;
+        while(s){
+            if(s->id!=dead->id){
+                string r1[2]={"elemental","unique"};
+                Mage* m=find_in_subtree(s->first_child,r1,2);
+                if(m) return m;
+                string r2[1]={"mixed"};
+                m=find_in_subtree(s->first_child,r2,1);
+                if(m) return m;
+                m=find_first_male(s->first_child);
+                if(m) return m;
+            }
+            s=s->next_sibling;
+        }
+        // _tios_
+        if(parent->father_id!=0){
+            Mage* gp=find_by_id(parent->father_id);
+            Mage* u=gp->first_child;
+            while(u){
+                if(u->id!=parent->id && !u->is_dead) return u;
+                u=u->next_sibling;
+            }
+        }
+        if(parent->is_dead){
+            Mage* r=choose_new_owner(parent);
+            if(r) return r;
+        }
+    }
+    Mage* cand=nullptr;
+    for(int i=0;i<mage_count;i++){
+        Mage* m=all_mages[i];
+        if(!m->is_dead && m->gender=='M' && m->first_child && m->type_magic=="mixed"){
+            if(!cand||m->age<cand->age) cand=m;
+        }
+    }
+    if(cand) return cand;
+    for(int i=0;i<mage_count;i++){
+        Mage* m=all_mages[i];
+        if(!m->is_dead && m->gender=='M'){
+            if(!cand||m->age<cand->age) cand=m;
+        }
+    }
+    return cand;
+}
+
+void MageTree::handle_death(int id_dead){
+    Mage* dead=find_by_id(id_dead);
+    if(!dead||dead->is_dead) return;
+    dead->is_dead=true;
+    if(dead->is_owner){
+        for(int i=0;i<mage_count;i++)
+            all_mages[i]->is_owner=false;
+
+        Mage* nxt=choose_new_owner(dead);
+        if(nxt){
+            nxt->is_owner=true;
+            cout<<"Nuevo duenio: "<<nxt->name<<" "<<nxt->last_name<<"\n";
+            save_to_csv("data.csv");
+        }
+    }
+}
+
+void MageTree::edit_mage(int id){
+    Mage* m=find_by_id(id);
+    if(!m){ cout<<"Mago no encontrado\n"; return; }
+
+    cout<<"Editando "<<m->name<<"\n";
+    cout<<"Nombre? "; cin>>m->name;
+    cout<<"Apellido? "; cin>>m->last_name;
+    cout<<"Edad? "; cin>>m->age;
+    cout<<"Muerto? (1/0) "; cin>>m->is_dead;
+
+    string tm;
+    do{
+        cout<<"Tipo magia (elemental, unique, mixed, no_magic): ";
+        cin>>tm;
+    } while(tm!="elemental"&&tm!="unique"&&tm!="mixed"&&tm!="no_magic");
+    m->type_magic=tm;
+
+    char own;
+    do{
+        cout<<"Duenio? (1/0) "; cin>>own;
+    } while(own!='1'&&own!='0');
+    if(own=='1'){
+        for(int i=0;i<mage_count;i++)
+            all_mages[i]->is_owner=false;
+        m->is_owner=true;
+    } else {
+        m->is_owner=false;
+    }
+
+    char opt;
+    do{
+        cout<<"Agregar hechizo? (s/n) "; cin>>opt;
+    } while(opt!='s'&&opt!='n');
+    while(opt=='s'){
+        cout<<"Hechizo: ";
+        string sp; cin>>ws; getline(cin,sp);
+        if(sp.empty()) cout<<"Hechizo invalido\n";
+        else{
+            SpellNode* node=new SpellNode(sp);
+            node->next=m->spells;
+            m->spells=node;
+        }
+        do{ cout<<"Agregar otro hechizo? (s/n) "; cin>>opt; }
+        while(opt!='s'&&opt!='n');
+    }
+
+    save_to_csv("data.csv");
+}
+
+void MageTree::show_spells(int id) const {
+    Mage* m=find_by_id(id);
+    if(!m){ cout<<"Mago no encontrado\n"; return; }
+    cout<<"Hechizos de "<<m->name<<":\n";
+    SpellNode* s=m->spells;
+    while(s){ cout<<" - "<<s->spell<<"\n"; s=s->next; }
+}
