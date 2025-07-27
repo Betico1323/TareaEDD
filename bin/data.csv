@@ -1,8 +1,12 @@
 id,name,last_name,gender,age,id_father,is_dead,type_magic,is_owner,spells
 1,Merlin,Ambrosius,H,150,0,0,unique,1,Transmutacion;Adivinacion
 2,Morgana,LeFay,M,140,1,0,elemental,0,Bola de Fuego;Control del Agua
-3,Arthur,Pendragon,H,35,1,0,mixed,0,Espada Sagrada
+3,Arthur,Pendragon,H,35,1,0,mixed,0,Espada Sagrada;Luz Sagrada
 4,Gawain,DuLac,H,20,3,0,elemental,0,Rayo de Energia
-5,Lancelot,DuLac,H,25,3,0,unique,0,Carga Mística;Escudo Arcano
+5,Lancelot,DuLac,H,25,3,0,unique,0,Carga Mistica;Escudo Arcano
 6,Mordred,Medraut,H,10,3,0,no_magic,0,
 7,Guinevere,DeTroy,M,30,2,0,mixed,0,Encanto Mental
+8,Merlin,Jr,H,45,1,0,unique,0,Portales
+9,Morgause,LeFay,M,50,2,0,mixed,0,Invisibilidad;Curacion
+10,Ygraine,DuLuc,M,15,9,0,elemental,0,Destello Solar
+11,Agravaine,Medraut,H,60,1,0,no_magic,0,Sombras
